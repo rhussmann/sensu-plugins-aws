@@ -186,7 +186,6 @@ class Ec2Node < Sensu::Handler
         instance_state_reason = instances.instances[0].state_reason.code
         # Returns the instance state i.e: "terminated"
         instance_state = instances.instances[0].state.name
-        
         # Return true is instance state and instance reason is valid
         instance_states.include?(instance_state) && instance_reasons.include?(instance_state_reason)
       end
