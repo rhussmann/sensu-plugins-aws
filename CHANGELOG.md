@@ -3,7 +3,127 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 This CHANGELOG follows the format listed at [Keep A Changelog](http://keepachangelog.com/)
 
-## Unreleased
+## [Unreleased]
+### Added
+- metrics-s3.rb: added
+- metrics-billing.rb: added
+- add check-cloudfront-tag.rb and check-s3-tag.rb (@obazoud)
+- check-s3-object.rb: add an option to check s3 object's size
+
+### Fixed
+- check-instance-events.rb: migrated the script to aws sdk v2 because of incompatibility of sdk v1 with newer regions (@oba11)
+- check-rds-events.rb: migrated the script to aws sdk v2 because of incompatibility of sdk v1 with newer regions (@oba11)
+- check-ses-limits.rb: Fix percentage calculation
+- check-rds.rb: Support added for checking all databases in a region
+- metrics-autoscaling-instance-count.rb: migrated the script to aws sdk v2 and support fetching all autoscaling groups (@oba11)
+
+## [3.2.1] - 2016-08-10
+### Fixed
+- check-instance-health.rb: fixed remediated events not working after resolving it (@oba11)
+- Fixed bugs in check-emr-steps.rb (@babsher)
+- check-elb-certs.rb: Fix error introduced by rubocop cleanup (#125 @eheydrick)
+
+## [3.2.0] - 2016-08-03
+### Fixed
+- metrics-emr-steps.rb: fixed typo in variable name (@babsher)
+- metrics-sqs.rb: --scheme option now works with --prefix (@mool)
+- check-ecs-service-health.rb:
+  - `service_list` retrieves all records when services not provided through options (@marckysharky)
+  - `service_details` - handles scenario whereby services array is greater than aws limit (10) (@marckysharky)
+- exit code for tests did not respect rspec exit codes due to autorun feature. (#133 @zbintliff)
+- syntax error in check-sensu-clients (@sstarcher)
+- check-rds-pending: Fix uninitialized constant (@obazoud)
+
+### Added
+- check-rds.rb: Add support for assuming a role in another account (@oba11)
+- check-instance-events.rb: Add instance_id option (@Jeppesen-io)
+- check-sensu-clients.rb: SSL support (@sstarcher)
+- common.rb: adding support for environment variable AWS_REGION when region is specified as an empty string (@sstarcher)
+- metrics-sqs.rb: Add support for recording additional per-queue SQS metrics (counts of not-visible and delayed messages) (@paddycarey)
+- check-subnet-ip-consumption.rb: to check consumption of IP addresses in subnets and alert if consumption exceeds a threshold (@nickjacques)
+- check-beanstalk-health.rb: Add optional region support
+- check-rds-events.rb: Added '-r all' region support (@swibowo)
+- check-instance-events.rb: Added '-r all' region support and description of the event. Minor change to output message (@swibowo)
+- check-elb-health-sdk.rb: Updated available regions fetch (@swibowo)
+- handler-ec2_node.rb: Add region support (@runningman84)
+
+### Changed
+- Update `aws-sdk` dependency pin to ~> 2.3 (@sstarcher)
+
+## [3.1.0] - 2016-05-15
+### Fixed
+- check-instance-events.rb: Ignore completed instance-stop ec2 events
+- check-instance-events.rb: Ignore canceled system-maintenance ec2 events
+
+## Added
+- Added check-instance-reachability.rb: looks up all instances from a filter set and pings
+- Added check-route.rb: checks a route to an instance / eni on a route table
+- Added check-rds-pending.rb: checks for pending RDS maintenance events
+
+### Changed
+- handler-ec2_node.rb updated to allow configuration set from client config
+- metrics-ec2-filter.rb: Moved filter parsing to library
+- update to Rubocop 0.40 and cleanup
+
+## [3.0.0] - 2016-05-05
+### Removed
+- Support for Ruby 2.0
+
+### Added
+- Support for Ruby 2.3
+- check-elb-health-sdk.rb: Added multi-region support and specify instance tag to display on check output
+- check-rds.rb: Added check for IOPS
+
+## [2.4.3] - 2016-04-13
+### Fixed
+- check-ses-statistics.rb: fix variable
+
+## [2.4.2] - 2016-04-13
+### Fixed
+- check-ses-statistics.rb, check-emr-steps.rb: fix requires
+- check-ses-statistics.rb, metrics-ses.rb: sort results from SES
+
+## [2.4.1] - 2016-04-13
+### Fixed
+- check-ses-statistics.rb: Make sure inputs are integers
+
+## [2.4.0] - 2016-04-13
+### Added
+- Added metrics-ses.rb to collect SES metrics from GetSendStatistics
+- Added check-ses-statistics.rb to check SES thresholds from GetSendStatistics
+- check-emr-steps.rb: Added options to check different step status for check EMR steps
+- metrics-emr.rb: Added cluster ID to EMR step metrics
+- Added two handlers for increasing/decreasing desired capacity of autoscaling groups
+- Implemented check for reserved instances
+- Added check to ensure that some or all AWS ConfigService rules have full compliance
+- Added check to ensure that SNS subscriptions is not pending
+- handler-ec2_node.rb: protect from instance state_reason which may be nil
+- Added check to ensure that some or all ECS Services are healthy on a cluster
+- Added check to ensure a KMS key is available (enabled or disabled)
+- metrics-elasticache.rb: retrieve BytesUsedForCache metric for redis nodes
+
+## [2.3.0] - 2016-03-18
+### Added
+- Implemented metrics for EMR cluster steps
+- Implemented check for EMR cluster failed steps
+
+### Changed
+- Update to aws-sdk 2.2.28
+
+### Fixed
+- check-cloudwatch-metric.rb: removed invalid .length.empty? check
+
+## [2.2.0] - 2016-02-25
+### Added
+- check-ebs-snapshots.rb: added -i flag to ignore volumes with an IGNORE_BACKUP tag
+- check-sensu-client.rb Ensures that ec2 instances are registered with Sensu.
+- check-trustedadvisor-service-limits.rb: New check for service limits based on Trusted Advisor API
+- check-sqs-messages.rb,metrics-sqs.rb: Allow specifying queues by prefix with -p option
+- check-rds-events.rb: Add option to check a specific RDS instance
+- Add plugin check-elasticache-failover.rb that checks if an Elasticache node is in the primary state
+
+### Fixed
+- metrics-elasticache.rb: Gather node metrics when requested
 
 ## [2.1.1] - 2016-02-05
 ### Added
@@ -127,8 +247,18 @@ WARNING:  This release contains major breaking changes that will impact all user
 ### Added
 - initial release
 
-[unreleased]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.1.1...HEAD
-[2.1.1]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.1.0...2.1.1
+[Unreleased]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/3.2.1...HEAD
+[3.2.1]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/3.2.0...3.2.1
+[3.2.0]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/3.1.0...3.2.0
+[3.1.0]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/3.0.0...3.1.0
+[3.0.0]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.4.3...3.0.0
+[2.4.3]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.4.2...2.4.3
+[2.4.2]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.4.1...2.4.2
+[2.4.1]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.4.0...2.4.1
+[2.4.0]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.3.0...2.4.0
+[2.3.0]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.2.0...2.3.0
+[2.2.0]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/v2.1.1...2.2.0
+[2.1.1]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.1.0...v2.1.1
 [2.1.0]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.0.1...2.1.0
 [2.0.1]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/sensu-plugins/sensu-plugins-aws/compare/1.2.0...2.0.0

@@ -16,6 +16,10 @@
 
 **check-cloudwatch-alarm**
 
+**check-cloudfront-tag**
+
+**check-configservice-rules**
+
 **check-dynamodb-capacity.rb**
 
 **check-dynamodb-throttle.rb**
@@ -28,7 +32,11 @@
 
 **check-ec2-network.rb**
 
+**check-ecs-service-health.rb**
+
 **check-eip-allocation.rb**
+
+**check-elasticache-failover.rb**
 
 **check-elb-certs.rb**
 
@@ -46,37 +54,61 @@
 
 **check-emr-cluster.rb**
 
+**check-emr-steps.rb**
+
 **check-instance-events.rb**
 
 **check-instance-health.rb**
 
+**check-kms-key.rb**
+
 **check-rds-events.rb**
+
+**check-rds-pending.rb**
 
 **check-rds.rb**
 
 **check-redshift-events.rb**
 
+**check-reserved-instances.rb**
+
 **check-s3-bucket.rb**
 
 **check-s3-object.rb**
 
+**check-s3-tag.rb**
+
 **check-ses-limit.rb**
 
+**check-ses-statistics.rb**
+
+**check-sns-subscriptions**
+
 **check-sqs-messages.rb**
+
+**check-subnet-ip-consumption**
 
 **check-vpc-nameservers**
 
 **check_vpc_vpn.py**
 
+**check-instances-count.rb**
+
 **check-vpc-vpn.rb**
 
 **handler-ec2_node.rb**
+
+**handler-scale-asg-down.rb**
+
+**handler-scale-asg-up.rb**
 
 **handler-ses.rb**
 
 **handler-sns.rb**
 
 **metrics-autoscaling-instance-count.rb**
+
+**metrics-billing.rb**
 
 **metrics-ec2-count.rb**
 
@@ -88,6 +120,12 @@
 
 **metrics-elb.rb**
 
+**metrics-emr-steps.rb**
+
+**metrics-s3.rb**
+
+**metrics-ses.rb**
+
 **metrics-sqs.rb**
 
 
@@ -96,12 +134,15 @@
 * /bin/check-autoscaling-cpucredits.rb
 * /bin/check-beanstalk-elb-metric.rb
 * /bin/check-certificate-expiry.rb
+* /bin/check-configservice-rules.rb
 * /bin/check-cloudwatch-alarm.rb
 * /bin/check-dynamodb-capacity.rb
 * /bin/check-dynamodb-throttle.rb
 * /bin/check-ebs-snapshots.rb
 * /bin/check-ec2-filter.rb
 * /bin/check-ec2-network.rb
+* /bin/check-ecs-service-health.rb
+* /bin/check-elasticache-failover.rb
 * /bin/check-elb-certs.rb
 * /bin/check-elb-health-fog.rb
 * /bin/check-elb-health-sdk.rb
@@ -110,13 +151,17 @@
 * /bin/check-elb-nodes.rb
 * /bin/check-elb-sum-requests.rb
 * /bin/check-emr-cluster.rb
+* /bin/check-emr-steps.rb
 * /bin/check-instance-events.rb
 * /bin/check-rds-events.rb
+* /bin/check-rds-pending.rb
 * /bin/check-rds.rb
 * /bin/check-redshift-events.rb
 * /bin/check-s3-object.rb
 * /bin/check-ses-limit.rb
+* /bin/check-ses-statistics.rb
 * /bin/check-sqs-messages.rb
+* /bin/check-subnet-ip-consumption.rb
 * /bin/check-vpc-nameservers.rb
 * /bin/check_vpc_vpn.py
 * /bin/check_vpc_vpn.rb
@@ -124,11 +169,16 @@
 * /bin/handler-ses.rb
 * /bin/handler-sns.rb
 * /bin/metrics-autoscaling-instance-count.rb
+* /bin/check-instances-count.rb
+* /bin/metrics-billing.rb
 * /bin/metrics-ec2-count.rb
 * /bin/metrics-ec2-filter.rb
 * /bin/metrics-elasticache.rb
 * /bin/metrics-elb-full.rb
 * /bin/metrics-elb.rb
+* /bin/metrics-emr-steps.rb
+* /bin/metrics-s3.rb
+* /bin/metrics-ses.rb
 * /bin/metrics-sqs.rb
 
 ## Usage

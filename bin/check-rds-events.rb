@@ -23,18 +23,25 @@
 #   gem: sensu-plugin
 #
 # USAGE:
-#  ./check-rds-events.rb -r ${your_region} -k ${your_aws_secret_access_key} -a ${your_aws_access_key}
+#  Check's a specific RDS instance in a specific region for critical events
+#  check-rds-events.rb -r ${your_region} -k ${your_aws_secret_access_key} -a ${your_aws_access_key} -i ${your_rds_instance_id_name}
+#
+#  Checks all RDS instances in a specific region
+#  check-rds-events.rb -r ${your_region} -k ${your_aws_secret_access_key} -a ${your_aws_access_key}
+#
+#  Checks all RDS instances in a specific region, should be using IAM role
+#  check-rds-events.rb -r ${your_region}
 #
 # NOTES:
 #
 # LICENSE:
-#   Tim Smith <tim@cozy.co>
+#   Tim Smith <tsmith@chef.io>
 #   Released under the same terms as Sensu (the MIT license); see LICENSE
 #   for details.
 #
 
 require 'sensu-plugin/check/cli'
-require 'aws-sdk-v1'
+require 'aws-sdk'
 
 class CheckRDSEvents < Sensu::Plugin::Check::CLI
   option :aws_access_key,
@@ -55,11 +62,19 @@ class CheckRDSEvents < Sensu::Plugin::Check::CLI
          description: 'AWS Region (defaults to us-east-1).',
          default:     'us-east-1'
 
+  option :db_instance_id,
+         short:       '-i N',
+         long:        '--db-instance-id NAME',
+         description: 'DB instance identifier'
+
   def aws_config
     { access_key_id: config[:aws_access_key],
       secret_access_key: config[:aws_secret_access_key],
-      region: config[:aws_region]
-    }
+      region: config[:aws_region] }
+  end
+
+  def rds_regions
+    Aws.partition('aws').regions.map(&:name)
   end
 
   def run
@@ -72,33 +87,56 @@ class CheckRDSEvents < Sensu::Plugin::Check::CLI
   end
 
   def maint_clusters
-    rds = AWS::RDS::Client.new aws_config
+    maint_clusters = []
+    aws_regions = rds_regions
 
-    begin
-      # fetch all clusters identifiers
-      clusters = rds.describe_db_instances[:db_instances].map { |db| db[:db_instance_identifier] }
-      maint_clusters = []
-
-      # fetch the last 15 minutes of events for each cluster
-      # that way, we're only spammed with persistent notifications that we'd care about.
-      clusters.each do |cluster_name|
-        events_record = rds.describe_events(start_time: (Time.now - 900).iso8601, source_type: 'db-instance', source_identifier: cluster_name)
-        next if events_record[:events].empty?
-
-        # we will need to filter out non-disruptive/basic operation events.
-        # ie. the regular backup operations
-        next if events_record[:events][-1][:message] =~ /Backing up DB instance|Finished DB Instance backup|Restored from snapshot/
-        # ie. Replication resumed
-        next if events_record[:events][-1][:message] =~ /Replication for the Read Replica resumed/
-        # you can add more filters to skip more events.
-
-        # draft the messages
-        cluster_name_long = "#{cluster_name} (#{aws_config[:region]}) #{events_record[:events][-1][:message]}"
-        maint_clusters.push(cluster_name_long)
+    unless config[:aws_region].casecmp('all') == 0
+      if aws_regions.include? config[:aws_region]
+        aws_regions.clear.push(config[:aws_region])
+      else
+        critical 'Invalid region specified!'
       end
-    rescue => e
-      unknown "An error occurred processing AWS RDS API: #{e.message}"
     end
+
+    aws_regions.each do |r|
+      rds = Aws::RDS::Client.new aws_config.merge!(region: r)
+
+      begin
+        if !config[:db_instance_id].nil? && !config[:db_instance_id].empty?
+          db_instance = rds.describe_db_instances(db_instance_identifier: config[:db_instance_id])
+          if db_instance.nil? || db_instance.empty?
+            unknown "#{config[:db_instance_id]} instance not found"
+          else
+            clusters = [config[:db_instance_id]]
+          end
+        else
+          # fetch all clusters identifiers
+          clusters = rds.describe_db_instances[:db_instances].map { |db| db[:db_instance_identifier] }
+        end
+
+        # fetch the last 15 minutes of events for each cluster
+        # that way, we're only spammed with persistent notifications that we'd care about.
+        clusters.each do |cluster_name|
+          events_record = rds.describe_events(start_time: (Time.now - 900).iso8601, source_type: 'db-instance', source_identifier: cluster_name)
+          next if events_record[:events].empty?
+
+          # we will need to filter out non-disruptive/basic operation events.
+          # ie. the regular backup operations
+          next if events_record[:events][-1][:message] =~ /Backing up DB instance|Finished DB Instance backup|Restored from snapshot/
+          # ie. Replication resumed
+          next if events_record[:events][-1][:message] =~ /Replication for the Read Replica resumed/
+          # you can add more filters to skip more events.
+
+          # draft the messages
+          cluster_name_long = "#{cluster_name} (#{r}) #{events_record[:events][-1][:message]}"
+          maint_clusters.push(cluster_name_long)
+        end
+
+      rescue => e
+        unknown "An error occurred processing AWS RDS API (#{r}): #{e.message}"
+      end
+    end
+
     maint_clusters
   end
 end

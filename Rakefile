@@ -1,4 +1,3 @@
-
 require 'bundler/gem_tasks'
 require 'github/markup'
 require 'redcarpet'
@@ -6,6 +5,7 @@ require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'yard'
 require 'yard/rake/yardoc_task'
+require 'English' # needed for $CHILD_STATUS vs $?
 
 args = [:spec, :make_bin_executable, :yard, :rubocop, :check_binstubs]
 
@@ -23,7 +23,7 @@ end
 
 desc 'Make all plugins executable'
 task :make_bin_executable do
-  `chmod -R +x bin/*.rb`
+  `chmod -R +x bin/*`
 end
 
 desc 'Test for binstubs'

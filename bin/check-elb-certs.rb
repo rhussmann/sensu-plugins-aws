@@ -82,8 +82,7 @@ class CheckELBCerts < Sensu::Plugin::Check::CLI
   def aws_config
     { access_key_id: config[:aws_access_key],
       secret_access_key: config[:aws_secret_access_key],
-      region: config[:aws_region]
-    }
+      region: config[:aws_region] }
   end
 
   def run
@@ -128,7 +127,7 @@ class CheckELBCerts < Sensu::Plugin::Check::CLI
       unknown "An error occurred processing AWS ELB API: #{e.message}"
     end
 
-    if !critical_message.length.empty?
+    if !critical_message.empty?
       message = cert_message(critical_message.length, 'expiring within', config[:crit_under])
       message += ': ' + critical_message.sort.join(' ')
       critical message

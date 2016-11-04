@@ -34,18 +34,6 @@ class CheckInstanceReachability < Sensu::Plugin::Check::CLI
   include Common
   include Filter
 
-  option :aws_access_key,
-         short: '-a AWS_ACCESS_KEY',
-         long: '--aws-access-key AWS_ACCESS_KEY',
-         description: "AWS Access Key. Either set ENV['AWS_ACCESS_KEY'] or provide it as an option",
-         default: ENV['AWS_ACCESS_KEY']
-
-  option :aws_secret_access_key,
-         short: '-k AWS_SECRET_KEY',
-         long: '--aws-secret-access-key AWS_SECRET_KEY',
-         description: "AWS Secret Access Key. Either set ENV['AWS_SECRET_KEY'] or provide it as an option",
-         default: ENV['AWS_SECRET_KEY']
-
   option :aws_region,
          short: '-r AWS_REGION',
          long: '--aws-region REGION',
@@ -96,8 +84,8 @@ class CheckInstanceReachability < Sensu::Plugin::Check::CLI
         res[:instances].each do |i|
           instance_ids << i[:instance_id]
           `ping -c #{config[:count]} -W #{config[:timeout]} #{i[:private_ip_address]}`
-          if $?.to_i > 0
-              errors << "Could not reach #{i[:instance_id]}"
+          if $CHILD_STATUS.to_i > 0
+            errors << "Could not reach #{i[:instance_id]}"
           end
         end
       end
@@ -106,9 +94,9 @@ class CheckInstanceReachability < Sensu::Plugin::Check::CLI
       critical
     end
     if errors.empty?
-      ok "Instances checked: #{instance_ids.join(",")}"
+      ok "Instances checked: #{instance_ids.join(',')}"
     else
-      message = errors.join(",")
+      message = errors.join(',')
       if config[:critical_response]
         critical message
       else

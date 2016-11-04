@@ -34,18 +34,6 @@ class CheckRoute < Sensu::Plugin::Check::CLI
   include Common
   include Filter
 
-  option :aws_access_key,
-         short: '-a AWS_ACCESS_KEY',
-         long: '--aws-access-key AWS_ACCESS_KEY',
-         description: "AWS Access Key. Either set ENV['AWS_ACCESS_KEY'] or provide it as an option",
-         default: ENV['AWS_ACCESS_KEY']
-
-  option :aws_secret_access_key,
-         short: '-k AWS_SECRET_KEY',
-         long: '--aws-secret-access-key AWS_SECRET_KEY',
-         description: "AWS Secret Access Key. Either set ENV['AWS_SECRET_KEY'] or provide it as an option",
-         default: ENV['AWS_SECRET_KEY']
-
   option :aws_region,
          short: '-r AWS_REGION',
          long: '--aws-region REGION',
@@ -62,37 +50,37 @@ class CheckRoute < Sensu::Plugin::Check::CLI
          description: 'Network interface id of route',
          short: '-n NETWORK_INTERFACE_ID',
          long: '--network-interface-id NETWORK_INTERFACE_ID',
-         default: ""
+         default: ''
 
   option :instance_id,
          description: 'Instance Id attachment of route',
          short: '-i INSTANCE_ID',
          long: '--instance-id INSTANCE_ID',
-         default: ""
+         default: ''
 
   option :destination_cidr_block,
          description: 'Destination CIDR block of route',
          short: '-d DESTINATION_CIDR',
          long: '--destination-cidr DESTINATION_CIDR',
-         default: ""
+         default: ''
 
   option :gateway_id,
          description: 'Gateway Id of route',
          short: '-g GATEWAY_ID',
          long: '--gateway-id GATEWAY_ID',
-         default: ""
+         default: ''
 
   option :state,
          description: 'The route state. Can be either "active" or "blackhole"',
          short: '-s STATE',
          long: '--state STATE',
-         default: "active"
+         default: 'active'
 
   option :vpc_peering_id,
          description: 'VPC peering connection id',
          short: '-v VPC_PEERING_ID',
          long: '--vpc-peering-id VPC_PEERING_ID',
-         default: ""
+         default: ''
 
   def run
     begin
@@ -103,7 +91,6 @@ class CheckRoute < Sensu::Plugin::Check::CLI
 
       options = { filters: filter }
 
-      errors = []
       data = client.describe_route_tables(options)
 
       data[:route_tables].each do |rt|
@@ -128,8 +115,7 @@ class CheckRoute < Sensu::Plugin::Check::CLI
         end
       end
     rescue => e
-      puts "Error: exception: #{e}"
-      critical
+      critical "Error: exception: #{e}"
     end
     critical
   end

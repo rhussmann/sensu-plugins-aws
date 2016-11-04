@@ -77,8 +77,7 @@ class ELBMetrics < Sensu::Plugin::Metric::CLI::Graphite
   def aws_config
     { access_key_id: config[:aws_access_key],
       secret_access_key: config[:aws_secret_access_key],
-      region: config[:aws_region]
-    }
+      region: config[:aws_region] }
   end
 
   def run
@@ -135,7 +134,7 @@ class ELBMetrics < Sensu::Plugin::Metric::CLI::Graphite
         next if result.nil?
         result.each do |key, value|
           puts key, value
-          output graphitepath + ".#{key}", value.to_a.last[1], value[:timestamp].to_i
+          output graphitepath + ".#{key}", value[:sum] || value[:average], value[:timestamp].to_i
         end
       end
     rescue => e
