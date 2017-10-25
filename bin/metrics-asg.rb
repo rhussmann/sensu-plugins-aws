@@ -1,6 +1,6 @@
 #! /usr/bin/env ruby
 #
-# elb-metrics
+# asg-metrics
 #
 # DESCRIPTION:
 #   Gets latency metrics from CloudWatch and puts them in Graphite for longer term storage
@@ -18,35 +18,29 @@
 #   gem: time
 #
 # USAGE:
-#   #YELLOW
+#
 #
 # NOTES:
-#   Returns latency statistics by default.  You can specify any valid ELB metric type, see
-#   http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/CW_Support_For_AWS.html#elb-metricscollected
-#
-#   By default fetches statistics from one minute ago.  You may need to fetch further back than this;
-#   high traffic ELBs can sometimes experience statistic delays of up to 10 minutes.  If you experience this,
-#   raising a ticket with AWS support should get the problem resolved.
-#   As a workaround you can use eg -f 300 to fetch data from 5 minutes ago.
+#   Returns latency statistics by default.  You can specify any valid ASG metric type, see
+#   http://http://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/as-metricscollected.html
 #
 # LICENSE:
-#   Copyright 2013 Bashton Ltd http://www.bashton.com/
+#   Peter Hoppe <peter.hoppe.extern@bertelsmann.de>
 #   Released under the same terms as Sensu (the MIT license); see LICENSE
 #   for details.
-#   Updated by Peter Hoppe <peter.hoppe.extern@bertelsmann.de> 09.11.2016
-#   Using aws sdk version 2
+#
 
 require 'sensu-plugin/metric/cli'
 require 'aws-sdk'
 require 'sensu-plugins-aws'
 require 'time'
 
-class ELBMetrics < Sensu::Plugin::Metric::CLI::Graphite
+class ASGMetrics < Sensu::Plugin::Metric::CLI::Graphite
   include Common
-  option :elbname,
-         description: 'Name of the Elastic Load Balancer',
-         short: '-n ELB_NAME',
-         long: '--name ELB_NAME'
+  option :asgname,
+         description: 'Name of the Auto Scaling Group',
+         short: '-n ASG_NAME',
+         long: '--name ASG_NAME'
 
   option :scheme,
          description: 'Metric naming scheme, text to prepend to metric',
@@ -60,6 +54,12 @@ class ELBMetrics < Sensu::Plugin::Metric::CLI::Graphite
          long: '--fetch_age',
          default: 60,
          proc: proc(&:to_i)
+
+  option :metric,
+         description: 'Metric to fetch',
+         short: '-m METRIC',
+         long: '--metric',
+         default: 'GroupInServiceInstances'
 
   option :statistic,
          description: 'Statistics type',
@@ -91,18 +91,18 @@ class ELBMetrics < Sensu::Plugin::Metric::CLI::Graphite
     @cloud_watch = Aws::CloudWatch::Client.new
   end
 
-  def loadbalancer
-    @loadbalancer = Aws::ElasticLoadBalancing::Client.new
+  def asg
+    @asg = Aws::AutoScaling::Client.new
   end
 
-  def cloud_watch_metric(metric_name, value, load_balancer_name)
+  def cloud_watch_metric(metric_name, value, asg_name)
     cloud_watch.get_metric_statistics(
-      namespace: 'AWS/ELB',
+      namespace: 'AWS/AutoScaling',
       metric_name: metric_name,
       dimensions: [
         {
-          name: 'LoadBalancerName',
-          value: load_balancer_name
+          name: 'AutoScaling',
+          value: asg_name
         }
       ],
       statistics: [value],
@@ -112,13 +112,13 @@ class ELBMetrics < Sensu::Plugin::Metric::CLI::Graphite
     )
   end
 
-  def print_statistics(load_balancer_name, statistics)
+  def print_statistics(asg_name, statistics)
     result = {}
     static_value = {}
     statistics.each do |key, static|
-      r = cloud_watch_metric(key, static, load_balancer_name)
-      static_value['loadbalancer.' + load_balancer_name + '.' + key + '.' + static] = static
-      result['loadbalancer.' + load_balancer_name + '.' + key + '.' + static] = r[:datapoints][0] unless r[:datapoints][0].nil?
+      r = cloud_watch_metric(key, static, asg_name)
+      static_value['AutoScalingGroup.' + asg_name + '.' + key + '.' + static] = static
+      result['AutoScalingGroup.' + asg_name + '.' + key + '.' + static] = r[:datapoints][0] unless r[:datapoints][0].nil?
     end
     result.each do |key, value|
       output key.downcase.to_s, value[static_value[key].downcase], value[:timestamp].to_i
@@ -128,19 +128,14 @@ class ELBMetrics < Sensu::Plugin::Metric::CLI::Graphite
   def run
     if config[:statistic] == ''
       default_statistic_per_metric = {
-        'Latency' => 'Average',
-        'RequestCount' => 'Sum',
-        'UnHealthyHostCount' => 'Average',
-        'HealthyHostCount' => 'Average',
-        'HTTPCode_Backend_2XX' => 'Sum',
-        'HTTPCode_Backend_3XX' => 'Sum',
-        'HTTPCode_Backend_4XX' => 'Sum',
-        'HTTPCode_Backend_5XX' => 'Sum',
-        'HTTPCode_ELB_4XX' => 'Sum',
-        'HTTPCode_ELB_5XX' => 'Sum',
-        'BackendConnectionErrors' => 'Sum',
-        'SurgeQueueLength' => 'Maximum',
-        'SpilloverCount' => 'Sum'
+        'GroupMinSize' => 'Sum',
+        'GroupMaxSize' => 'Sum',
+        'GroupDesiredCapacity' => 'Sum',
+        'GroupInServiceInstances' => 'Sum',
+        'GroupPendingInstances' => 'Sum',
+        'GroupStandbyInstances' => 'Sum',
+        'GroupTerminatingInstances' => 'Sum',
+        'GroupTotalInstances' => 'Sum'
       }
       statistic = default_statistic_per_metric
     else
@@ -148,12 +143,12 @@ class ELBMetrics < Sensu::Plugin::Metric::CLI::Graphite
     end
 
     begin
-      if config[:elbname].nil?
-        loadbalancer.describe_load_balancers.load_balancer_descriptions.each do |elb|
-          print_statistics(elb.load_balancer_name, statistic)
+      if config[:asgname].nil?
+        asg.describe_auto_scaling_groups.auto_scaling_groups.each do |autoascalinggroup|
+          print_statistics(autoascalinggroup.auto_scaling_group_name, statistic)
         end
       else
-        print_statistics(config[:elbname], statistic)
+        print_statistics(config[:asgname], statistic)
       end
       ok
     end

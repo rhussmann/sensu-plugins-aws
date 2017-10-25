@@ -1,10 +1,13 @@
 #! /usr/bin/env ruby
 #
-# check-cloudwatch-metric
+# check-cloudwatch-composite-metric
 #
 # DESCRIPTION:
-#   This plugin retrieves the value of a cloudwatch metric and triggers
-#   alarms based on the thresholds specified
+#   This plugin retrieves a couple of values of two cloudwatch metrics,
+#   computes a percentage value based on the numerator metric and the denomicator metric
+#   and triggers alarms based on the thresholds specified.
+#   This plugin is an extension to the Andrew Matheny's check-cloudwatch-metric plugin
+#   and uses the CloudwatchCommon lib, extended as well.
 #
 # OUTPUT:
 #   plain-text
@@ -17,12 +20,12 @@
 #   gem: sensu-plugin
 #
 # USAGE:
-#   ./check-cloudwatch-metric -m CPUUtilization -d InstanceId=i-12345678,AvailabilityZone=us-east-1a -c 90
+#   ./check-cloudwatch-composite-metric.rb --namespace AWS/ELB -N HTTPCode_Backend_4XX -D RequestCount --dimensions LoadBalancerName=test-elb --period 60 --statistics Maximum --operator equal --critical 0
 #
 # NOTES:
 #
 # LICENSE:
-#   Andrew Matheny
+#   Cornel Foltea
 #   Released under the same terms as Sensu (the MIT license); see LICENSE
 #   for details.
 #
@@ -31,7 +34,7 @@ require 'sensu-plugins-aws'
 require 'sensu-plugin/check/cli'
 require 'aws-sdk'
 
-class CloudWatchMetricCheck < Sensu::Plugin::Check::CLI
+class CloudWatchCompositeMetricCheck < Sensu::Plugin::Check::CLI
   option :aws_region,
          short: '-r AWS_REGION',
          long: '--aws-region REGION',
@@ -44,10 +47,16 @@ class CloudWatchMetricCheck < Sensu::Plugin::Check::CLI
          long: '--namespace NAME',
          default: 'AWS/EC2'
 
-  option :metric_name,
-         description: 'Metric name',
-         short: '-m NAME',
-         long: '--metric NAME',
+  option :numerator_metric_name,
+         description: 'Numerator metric name',
+         short: '-N NAME',
+         long: '--numerator-metric NAME',
+         required: true
+
+  option :denominator_metric_name,
+         description: 'Denominator metric name',
+         short: '-D NAME',
+         long: '--denominator-metric NAME',
          required: true
 
   option :dimensions,
@@ -103,21 +112,11 @@ class CloudWatchMetricCheck < Sensu::Plugin::Check::CLI
 
   include CloudwatchCommon
 
-  def self.parse_dimensions(dimension_string)
-    dimension_string.split(',')
-                    .collect { |d| d.split '=' }
-                    .collect { |a| { name: a[0], value: a[1] } }
-  end
-
-  def dimension_string
-    config[:dimensions].map { |d| "#{d[:name]}=#{d[:value]}" }.join('&')
-  end
-
   def metric_desc
-    "#{config[:namespace]}-#{config[:metric_name]}(#{dimension_string})"
+    "#{config[:namespace]}-#{config[:numerator_metric_name]}/#{config[:denominator_metric_name]}(#{dimension_string})"
   end
 
   def run
-    check config
+    composite_check config
   end
 end

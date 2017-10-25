@@ -31,11 +31,14 @@ Gem::Specification.new do |s|
   s.test_files             = s.files.grep(%r{^(test|spec|features)/})
   s.version                = SensuPluginsAWS::Version::VER_STRING
 
-  s.add_runtime_dependency 'aws-sdk',           '~> 2.9'
+  s.add_runtime_dependency 'aws-sdk',           '~> 2.10'
   s.add_runtime_dependency 'aws-sdk-v1',        '1.66.0'
   s.add_runtime_dependency 'fog',               '1.32.0'
+  # 1.44 requires xmlrpc which only supports >= ruby 2.3
+  # https://github.com/fog/fog-core/issues/206
+  s.add_runtime_dependency 'fog-core',          '1.43.0'
   s.add_runtime_dependency 'right_aws',         '3.1.0'
-  s.add_runtime_dependency 'sensu-plugin',      '~> 1.3'
+  s.add_runtime_dependency 'sensu-plugin',      '~> 2.0'
   s.add_runtime_dependency 'erubis',            '2.7.0'
   s.add_runtime_dependency 'rest-client',       '1.8.0'
 
